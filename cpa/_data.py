@@ -3,7 +3,21 @@ from typing import Optional
 from scvi import settings
 from scvi.data import AnnDataManager
 from scvi.dataloaders import DataSplitter, AnnDataLoader
-from scvi.model._utils import parse_use_gpu_arg
+import torch
+
+
+def accelerator_device_from_use_gpu(use_gpu):
+    if use_gpu is False:
+        return "cpu", 1, torch.device("cpu")
+    if isinstance(use_gpu, int) and not isinstance(use_gpu, bool):
+        return "gpu", [use_gpu], torch.device(f"cuda:{use_gpu}")
+    if isinstance(use_gpu, str):
+        return "gpu", use_gpu, torch.device("cuda:0")
+    if use_gpu is True:
+        return "gpu", 1, torch.device("cuda:0")
+    if torch.cuda.is_available():
+        return "gpu", 1, torch.device("cuda:0")
+    return "cpu", 1, torch.device("cpu")
 
 
 class AnnDataSplitter(DataSplitter):
@@ -24,12 +38,11 @@ class AnnDataSplitter(DataSplitter):
         self.test_idx = test_indices
 
     def setup(self, stage: Optional[str] = None):
-        accelerator, _, self.device = parse_use_gpu_arg(
-            self.use_gpu, return_device=True
-        )
+        accelerator, _, self.device = accelerator_device_from_use_gpu(self.use_gpu)
+        pin_memory_gpu_training = getattr(settings, "dl_pin_memory_gpu_training", True)
         self.pin_memory = (
             True
-            if (settings.dl_pin_memory_gpu_training and accelerator == "gpu")
+            if (pin_memory_gpu_training and accelerator == "gpu")
             else False
         )
 

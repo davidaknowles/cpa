@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-from tkinter import N
 from typing import Optional, Sequence, Union, List, Dict
 
 from rdkit import Chem
@@ -12,7 +11,7 @@ import torch.nn as nn
 import numpy as np
 import pandas as pd
 import torch
-from pytorch_lightning.callbacks import EarlyStopping
+from lightning.pytorch.callbacks import EarlyStopping
 from scvi.data import AnnDataManager
 from scvi.dataloaders import DataSplitter
 from torch.nn import functional as F
@@ -26,14 +25,13 @@ from scvi.data.fields import (
 from anndata import AnnData
 from scvi.model.base import BaseModelClass
 from scvi.train import TrainRunner
-from scvi.train._callbacks import SaveBestState
 from scvi.utils import setup_anndata_dsp
 from tqdm import tqdm
 
 from ._module import CPAModule
 from ._utils import CPA_REGISTRY_KEYS
 from ._task import CPATrainingPlan
-from ._data import AnnDataSplitter
+from ._data import AnnDataSplitter, accelerator_device_from_use_gpu
 
 logger = logging.getLogger(__name__)
 logger.propagate = False
@@ -508,12 +506,13 @@ class CPA(BaseModelClass):
                 use_gpu=use_gpu,
             )
         else:
+            accelerator, devices, _ = accelerator_device_from_use_gpu(use_gpu)
             data_splitter = DataSplitter(
                 self.adata_manager,
                 train_size=train_size,
                 validation_size=validation_size,
                 batch_size=batch_size,
-                use_gpu=use_gpu,
+                pin_memory=accelerator == "gpu",
             )
 
         perturbation_key = CPA_REGISTRY_KEYS.PERTURBATION_KEY
@@ -560,17 +559,15 @@ class CPA(BaseModelClass):
         if save_path is None:
             save_path = "./"
 
-        checkpoint = SaveBestState(
-            monitor="cpa_metric", mode="max", period=1, verbose=True
-        )
-        trainer_kwargs["callbacks"].append(checkpoint)
+        accelerator, devices, _ = accelerator_device_from_use_gpu(use_gpu)
 
         self.runner = TrainRunner(
             self,
             training_plan=self.training_plan,
             data_splitter=data_splitter,
             max_epochs=max_epochs,
-            use_gpu=use_gpu,
+            accelerator=accelerator,
+            devices=devices,
             early_stopping_monitor="cpa_metric",
             early_stopping_mode="max",
             **trainer_kwargs,

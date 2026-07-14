@@ -174,6 +174,8 @@ class CPATrainingPlan(TrainingPlan):
                         'adv_loss', 'penalty_adv', 'adv_perts', 'acc_perts', 'penalty_perts']
 
         self.epoch_history = defaultdict(list)
+        self.training_step_outputs = []
+        self.validation_step_outputs = []
         self.n_adv_perts = n_adv_perts
 
         self.perturbation_classifier = Classifier(
@@ -563,9 +565,12 @@ class CPATrainingPlan(TrainingPlan):
         results.update({'cpa_metric': 0.0})
         results.update({'disnt_basal': 0.0, 'disnt_after': 0.0})
 
+        self.training_step_outputs.append(results)
         return results
 
-    def training_epoch_end(self, outputs):
+    def on_train_epoch_end(self):
+        outputs = self.training_step_outputs
+
         for key in self.metrics:
             if key in ['disnt_basal', 'disnt_after']:
                 self.epoch_history[key].append(0.0)
@@ -595,6 +600,8 @@ class CPATrainingPlan(TrainingPlan):
             sch.step()
             sch_doser.step()
             sch_adv.step()
+
+        self.training_step_outputs.clear()
 
     def validation_step(self, batch, batch_idx):
         batch, mixup_lambda = self.module.mixup_data(batch, alpha=0.0)  # No mixup during validation
@@ -628,9 +635,12 @@ class CPATrainingPlan(TrainingPlan):
         results.update({'recon_loss': recon_loss.item()})
         results.update({'cpa_metric': r2_mean + 0.5 * r2_var + math.e ** (disnt_after - disnt_basal)})
 
+        self.validation_step_outputs.append(results)
         return results
 
-    def validation_epoch_end(self, outputs):
+    def on_validation_epoch_end(self):
+        outputs = self.validation_step_outputs
+
         for key in self.metrics:
             self.epoch_history[key].append(np.mean([output[key] for output in outputs if output[key] != 0.0]))
 
@@ -658,3 +668,4 @@ class CPATrainingPlan(TrainingPlan):
             print(f'val_r2_mean = {self.epoch_history["r2_mean"][-1]}')
             print(f'val_r2_var = {self.epoch_history["r2_var"][-1]}')
 
+        self.validation_step_outputs.clear()
