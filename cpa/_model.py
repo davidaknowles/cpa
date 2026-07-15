@@ -1033,7 +1033,9 @@ class CPA(BaseModelClass):
             cls.pert_smiles_map = total_dict.get("pert_smiles_map", None)
             
 
-        model = super().load(dir_path, adata, use_gpu)
+        accelerator, devices, _ = accelerator_device_from_use_gpu(use_gpu)
+        device = devices[0] if isinstance(devices, list) else "auto"
+        model = super().load(dir_path, adata, accelerator=accelerator, device=device)
 
         try:
             model.epoch_history = pd.read_csv(os.path.join(dir_path, "history.csv"))

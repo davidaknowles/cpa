@@ -11,6 +11,7 @@ Key implementation changes:
 - CPA imports Lightning callbacks from `lightning.pytorch` to avoid mixed `pytorch_lightning`/`lightning.pytorch` Trainer errors.
 - `CPATrainingPlan` uses Lightning 2 epoch hooks (`on_train_epoch_end`, `on_validation_epoch_end`) and stores step outputs internally.
 - AnnData splitting tolerates scvi versions without `settings.dl_pin_memory_gpu_training`, defaulting to pinned memory for GPU training.
+- `CPA.load` maps the legacy `use_gpu` argument to modern scvi `accelerator` and `device` arguments before restoring saved models.
 
 Validation:
 
