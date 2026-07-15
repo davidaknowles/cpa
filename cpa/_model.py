@@ -611,8 +611,6 @@ class CPA(BaseModelClass):
         adata = self._validate_anndata(adata)
         if indices is None:
             indices = np.arange(adata.n_obs)
-        output_obs = adata.obs.iloc[indices].copy()
-        output_obs_names = adata.obs_names[indices].copy()
         scdl = self._make_data_loader(
             adata=adata, indices=indices, batch_size=batch_size, shuffle=False
         )
@@ -676,8 +674,6 @@ class CPA(BaseModelClass):
         adata = self._validate_anndata(adata)
         if indices is None:
             indices = np.arange(adata.n_obs)
-        output_obs = adata.obs.iloc[indices].copy()
-        output_obs_names = adata.obs_names[indices].copy()
         scdl = self._make_data_loader(
             adata=adata, indices=indices, batch_size=batch_size, shuffle=False
         )
@@ -756,6 +752,8 @@ class CPA(BaseModelClass):
         adata = self._validate_anndata(adata)
         if indices is None:
             indices = np.arange(adata.n_obs)
+        output_obs = adata.obs.iloc[indices].copy()
+        output_obs_names = adata.obs_names[indices].copy()
         scdl = self._make_data_loader(
             adata=adata, indices=indices, batch_size=batch_size, shuffle=False
         )
