@@ -611,6 +611,8 @@ class CPA(BaseModelClass):
         adata = self._validate_anndata(adata)
         if indices is None:
             indices = np.arange(adata.n_obs)
+        output_obs = adata.obs.iloc[indices].copy()
+        output_obs_names = adata.obs_names[indices].copy()
         scdl = self._make_data_loader(
             adata=adata, indices=indices, batch_size=batch_size, shuffle=False
         )
@@ -827,34 +829,34 @@ class CPA(BaseModelClass):
             z_basal = z_basal.mean(0)
 
         latent_x_pred = AnnData(
-            X=x_pred, obs=adata.obs.copy()
+            X=x_pred, obs=output_obs.copy()
         )
-        latent_x_pred.obs_names = adata.obs_names
+        latent_x_pred.obs_names = output_obs_names
 
         latent_z = AnnData(
-            X=z, obs=adata.obs.copy()
+            X=z, obs=output_obs.copy()
         )
-        latent_z.obs_names = adata.obs_names
+        latent_z.obs_names = output_obs_names
 
         latent_z_corrected = AnnData(
-            X=z_corrected, obs=adata.obs.copy()
+            X=z_corrected, obs=output_obs.copy()
         )
-        latent_z_corrected.obs_names = adata.obs_names
+        latent_z_corrected.obs_names = output_obs_names
 
         latent_z_no_pert = AnnData(
-            X=z_no_pert, obs=adata.obs.copy()
+            X=z_no_pert, obs=output_obs.copy()
         )
-        latent_z_no_pert.obs_names = adata.obs_names
+        latent_z_no_pert.obs_names = output_obs_names
 
         latent_z_no_pert_corrected = AnnData(
-            X=z_no_pert_corrected, obs=adata.obs.copy()
+            X=z_no_pert_corrected, obs=output_obs.copy()
         )
-        latent_z_no_pert_corrected.obs_names = adata.obs_names
+        latent_z_no_pert_corrected.obs_names = output_obs_names
 
         latent_z_basal = AnnData(
-            X=z_basal, obs=adata.obs.copy()
+            X=z_basal, obs=output_obs.copy()
         )
-        latent_z_basal.obs_names = adata.obs_names
+        latent_z_basal.obs_names = output_obs_names
 
         latent_outputs = {
             "latent_x_pred": latent_x_pred,
